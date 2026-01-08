@@ -56,6 +56,7 @@ module.exports = {
                 {
                     ip: '0.0.0.0', // Transports will listen on all interfaces
                     announcedIp: '210.79.128.191' // ANNOUNCE THIS IP TO CLIENTS.
+                    // announcedIp: '210.79.128.191' // ANNOUNCE THIS IP TO CLIENTS.
                 }
             ],
             initialAvailableOutgoingBitrate: 1000000,
