@@ -214,13 +214,14 @@
 
     .video-grid {
       flex: 1;
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      /* Desktop: 2 columns */
+      align-content: center;
+      /* Center rows vertically */
       justify-content: center;
-      align-items: center;
-      align-content: flex-start;
-      /* Fix for overflow: Start from top */
-      padding: 20px;
+      padding: 80px 20px;
+      /* Safe area from bars */
       gap: 16px;
       overflow-y: auto;
       height: 100%;
@@ -233,10 +234,10 @@
       border-radius: 12px;
       overflow: hidden;
       position: relative;
-      flex: 0 0 calc(50% - 12px);
-      /* 2 per row desktop (gap 16px) */
-      max-width: 100%;
+      width: 100%;
+      /* Grid handles width */
       aspect-ratio: 16/9;
+      /* Default Landscape */
       max-height: 100%;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.05);
@@ -717,9 +718,9 @@
 
       /* Grid - 2 Column */
       .video-card {
-        flex: 0 0 calc(50% - 8px);
         aspect-ratio: 3/4;
         /* Taller for mobile to fit faces */
+        width: 100%;
       }
     }
   </style>

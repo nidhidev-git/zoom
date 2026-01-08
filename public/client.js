@@ -784,10 +784,10 @@ function addVideoCard(stream, pid, isAudio, isLocal, appData = {}) {
         audio.style.display = 'none'; // Hidden audio
         mediaContainer.appendChild(audio);
 
-        // Attempt Play
+        // Attempt Play Audio
         audio.play().catch(e => {
             console.warn("Audio Autoplay failed", e);
-            showPlayOverlay(card, audio);
+            retryMediaOnInteraction();
         });
 
         // Update Placeholder to show active mic
@@ -802,6 +802,7 @@ function addVideoCard(stream, pid, isAudio, isLocal, appData = {}) {
         video.id = `elem-${pid}`;
         video.playsInline = true;
         video.srcObject = stream;
+        video.muted = true; // Always start muted to ensure autoplay works
         if (isLocal) video.muted = true;
         video.style.width = '100%';
         video.style.height = '100%';
@@ -814,21 +815,22 @@ function addVideoCard(stream, pid, isAudio, isLocal, appData = {}) {
 
         mediaContainer.appendChild(video);
 
-        // Attempt Play
+        // Attempt Play Video (Muted)
         video.play().catch(e => {
             console.warn("Video Autoplay failed", e);
-            showPlayOverlay(card, video);
+            // even if muted fails (rare), use global retry
+            retryMediaOnInteraction();
         });
     }
 }
 
-function showPlayOverlay(card, mediaElement) {
+function showPlayOverlay(card, mediaElement, text = "Tap to Play") {
     // Check if already exists
     if (card.querySelector('.play-overlay')) return;
 
     const ov = document.createElement('div');
     ov.className = 'play-overlay';
-    ov.innerHTML = '<i class="material-icons" style="font-size:48px; color:white">play_circle_outline</i><div style="color:white; font-size:12px; margin-top:4px">Tap to Play</div>';
+    ov.innerHTML = `<i class="material-icons" style="font-size:48px; color:white">volume_off</i><div style="color:white; font-size:12px; margin-top:4px">${text}</div>`;
     ov.style.position = 'absolute';
     ov.style.top = '0';
     ov.style.left = '0';
@@ -843,9 +845,14 @@ function showPlayOverlay(card, mediaElement) {
     ov.style.cursor = 'pointer';
 
     ov.onclick = () => {
-        mediaElement.play()
-            .then(() => ov.remove())
-            .catch(err => console.error("Play failed again", err));
+        // Play ALL media in this card (Audio + Video)
+        const allMedia = card.querySelectorAll('audio, video');
+        let played = false;
+        allMedia.forEach(el => {
+            el.play().catch(e => console.error("Retry play failed", e));
+            played = true;
+        });
+        if (played) ov.remove();
     };
 
     card.appendChild(ov);
@@ -917,3 +924,26 @@ function request(type, data = {}) {
         });
     });
 }
+
+// --- SEAMLESS AUTOPLAY FALLBACK ---
+function retryMediaOnInteraction() {
+    if (window._mediaInteractionBound) return;
+    window._mediaInteractionBound = true;
+
+    const playAll = () => {
+        const media = document.querySelectorAll('audio, video');
+        media.forEach(el => {
+            el.play().catch(e => {
+                // Ignore
+            });
+        });
+        window._mediaInteractionBound = false;
+        document.removeEventListener('touchstart', playAll);
+        document.removeEventListener('click', playAll);
+    };
+
+    console.log('Waiting for user interaction to unblock media...');
+    document.addEventListener('touchstart', playAll, { once: true });
+    document.addEventListener('click', playAll, { once: true });
+}
+
