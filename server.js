@@ -353,5 +353,6 @@ async function createWebRtcTransport(router) {
 }
 
 httpsServer.listen(config.listenPort, () => {
-    console.log('Listening on https://' + config.listenIp + ':' + config.listenPort);
+    const proto = (fs.existsSync(config.sslKey) && fs.existsSync(config.sslCrt)) ? 'https' : 'http';
+    console.log(`Listening on ${proto}://${config.listenIp}:${config.listenPort}`);
 });

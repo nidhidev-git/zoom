@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports = {
     listenIp: '0.0.0.0',
-    listenPort: 3000,
+    listenPort: process.env.PORT || 3000,
     sslCrt: path.join(__dirname, 'certs/cert.pem'),
     sslKey: path.join(__dirname, 'certs/key.pem'),
 
@@ -11,8 +11,8 @@ module.exports = {
         // Worker settings
         numWorkers: Object.keys(os.cpus()).length,
         worker: {
-            rtcMinPort: 10000,
-            rtcMaxPort: 10100,
+            rtcMinPort: 20000,
+            rtcMaxPort: 20100,
             logLevel: 'warn',
             logTags: [
                 'info',
@@ -54,7 +54,7 @@ module.exports = {
             listenIps: [
                 {
                     ip: '0.0.0.0', // Transports will listen on all interfaces
-                    announcedIp: '127.0.0.1' // ANNOUNCE THIS IP TO CLIENTS. For LAN, use your LAN IP. For local, 127.0.0.1.
+                    announcedIp: process.env.ANNOUNCED_IP || '127.0.0.1' // ANNOUNCE THIS IP TO CLIENTS.
                 }
             ],
             initialAvailableOutgoingBitrate: 1000000,
