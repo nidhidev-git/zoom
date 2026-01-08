@@ -91,6 +91,7 @@ io.on('connection', (socket) => {
     socket.on('joinRoom', async ({ roomId, name, userId }, callback) => {
         try {
             const router = await getOrCreateRouter(roomId);
+            socket.join(roomId); // IMPORTANT: Join the socket.io room!
             socket.data.roomId = roomId;
 
             // Clean previous if any
@@ -154,6 +155,7 @@ io.on('connection', (socket) => {
     function broadcastParticipants(roomId) {
         if (rooms.has(roomId)) {
             const participantList = Array.from(rooms.get(roomId).peers.values());
+            console.log(`Broadcasting Participants to ${roomId}:`, participantList.length);
             io.to(roomId).emit('updateParticipants', participantList);
         }
     }

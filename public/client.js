@@ -232,6 +232,7 @@ async function connectSocket() {
 }
 
 socket.on('updateParticipants', list => {
+    console.log('Received participants list:', list);
     participantCount.innerText = `(${list.length})`;
     participantList.innerHTML = '';
 

@@ -480,7 +480,8 @@
 
     /* Bottom Bar - Floating */
     .bottom-bar {
-      position: absolute;
+      position: fixed;
+      /* Fixed to viewport to avoid 100vh scroll issues */
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
@@ -676,11 +677,18 @@
 
       /* Bottom Bar Compact */
       .bottom-bar {
-        bottom: 16px;
+        bottom: 20px;
+        /* Raised slightly for gesture bar */
         padding: 8px 12px;
         gap: 8px;
         height: 60px;
         width: 90%;
+        max-width: 400px;
+      }
+
+      .left-controls {
+        gap: 6px;
+        /* Tighter gap for mobile */
       }
 
       .control-btn {
