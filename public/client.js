@@ -18,6 +18,83 @@ let localAudioProducer = null;
 let localVideoProducer = null;
 let isScreenSharing = false;
 
+// --- UI GLOBALS ---
+window.toggleSidebar = () => {
+    const sb = document.getElementById('sidebar');
+    const btn = document.getElementById('btn-participants');
+
+    if (sb.classList.contains('hidden')) {
+        sb.classList.remove('hidden');
+        btn.classList.add('active');
+    } else {
+        sb.classList.add('hidden');
+        btn.classList.remove('active');
+    }
+};
+
+window.leaveRoom = () => {
+    if (confirm('Are you sure you want to leave?')) {
+        window.location.href = '/'; // Go back to root
+    }
+};
+
+window.toggleMicMenu = () => {
+    document.getElementById('mic-dropdown').classList.toggle('show');
+    document.getElementById('video-dropdown').classList.remove('show');
+};
+
+window.toggleVideoMenu = () => {
+    document.getElementById('video-dropdown').classList.toggle('show');
+    document.getElementById('mic-dropdown').classList.remove('show');
+};
+
+window.toggleMic = (val) => {
+    // Logic calls internal toggleMic(val)
+    // But internal is async function toggleMic(on)...
+    // We can just proxy it or make the internal one global.
+    // However, internal toggleMic depends on closure variables (producerTransport etc is module scope, which is fine)
+    // Let's rely on the internal functions being available if we export them, but bundling isolates them.
+    // We MUST attach the internal `toggleMic` to window.
+    // The previous code had `btnMic.onclick = ...` which is fine for that button.
+    // But `index.html` has `onclick="toggleMic()"`. 
+    // So we need `window.toggleMic = toggleMic;`
+    // Wait, let's just make the assignments at the end of the file.
+};
+// I will just change the function definitions to assignments on window or add assignments at the end.
+// Simplest is to just replace this block with window assignments and call the internal logic.
+// BUT `toggleMic` is defined later.
+// Let's just REPLACE this block with window assignments for the UI helpers.
+
+window.toggleSidebar = function () {
+    const sb = document.getElementById('sidebar');
+    const btn = document.getElementById('btn-participants');
+    sb.classList.toggle('hidden');
+    if (sb.classList.contains('hidden')) btn.classList.remove('active');
+    else btn.classList.add('active');
+}
+
+window.leaveRoom = function () {
+    if (confirm('Leave Meeting?')) window.location.href = window.location.pathname;
+}
+
+window.toggleMicMenu = function () {
+    document.getElementById('mic-dropdown').classList.toggle('show');
+    document.getElementById('video-dropdown').classList.remove('show');
+}
+window.toggleVideoMenu = function () {
+    document.getElementById('video-dropdown').classList.toggle('show');
+    document.getElementById('mic-dropdown').classList.remove('show');
+}
+
+// Close menus on click outside
+window.onclick = (e) => {
+    if (!e.target.closest('.mic-select-wrap')) {
+        document.getElementById('mic-dropdown').classList.remove('show');
+        document.getElementById('video-dropdown').classList.remove('show');
+    }
+};
+
+
 // --- DOM ELEMENTS ---
 // Login
 const loginScreen = document.getElementById('login-screen');
@@ -36,15 +113,17 @@ const participantCount = document.getElementById('participant-count');
 const sidebar = document.getElementById('sidebar');
 
 // Controls
+// Controls
 const btnMic = document.getElementById('btn-mic');
 const btnMicMenu = document.getElementById('btn-mic-menu');
-const micDropdown = document.getElementById('mic-dropdown');
-const btnVideo = document.getElementById('btn-video');
+const btnVideo = document.getElementById('btn-cam');
 const btnVideoMenu = document.getElementById('btn-video-menu');
-const videoDropdown = document.getElementById('video-dropdown');
 const btnShareScreen = document.getElementById('btn-share-screen');
 const btnParticipants = document.getElementById('btn-participants');
 const btnCopyLink = document.getElementById('btn-copy-link');
+
+const micDropdown = document.getElementById('mic-dropdown');
+const videoDropdown = document.getElementById('video-dropdown');
 
 
 // --- INIT ---
@@ -55,24 +134,54 @@ if (paramRoom) {
     createMode.classList.add('hidden');
     joinMode.classList.remove('hidden');
     document.getElementById('join-room-display').innerText = paramRoom;
+
+    // Auto-fill Name if available
+    const savedName = localStorage.getItem('zoom_name');
+    if (savedName) {
+        document.getElementById('join-name-input').value = savedName;
+        // Auto-join immediately
+        console.log('Auto-joining...', savedName);
+        joinProcedure(paramRoom, savedName);
+    }
+} else {
+    // If no room in URL but room in localstorage? 
+    // Maybe better to wait for user action unless it's a "recover" scenario.
+    const savedName = localStorage.getItem('zoom_name');
+    if (savedName) {
+        document.getElementById('host-name-input').value = savedName;
+        document.getElementById('join-name-input-manual').value = savedName;
+    }
 }
 
 document.getElementById('btn-create').onclick = () => {
     const name = document.getElementById('host-name-input').value.trim();
     if (!name) return alert('Name required');
+    localStorage.setItem('zoom_name', name);
     joinProcedure(Math.random().toString(36).substring(2, 7), name);
 };
 document.getElementById('btn-join-manual').onclick = () => {
     const r = document.getElementById('room-id-input').value.trim();
     const n = document.getElementById('join-name-input-manual').value.trim();
     if (!r || !n) return alert('Missing fields');
+    localStorage.setItem('zoom_name', n);
     joinProcedure(r, n);
 };
 document.getElementById('btn-join').onclick = () => {
     const n = document.getElementById('join-name-input').value.trim();
     if (!n) return alert('Name required');
+    localStorage.setItem('zoom_name', n);
     joinProcedure(paramRoom, n);
 };
+
+// --- IDENTITY ---
+function getUserId() {
+    let uid = localStorage.getItem('zoom_userId');
+    if (!uid) {
+        uid = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        localStorage.setItem('zoom_userId', uid);
+    }
+    return uid;
+}
 
 async function joinProcedure(rid, name) {
     myRoomId = rid;
@@ -84,11 +193,9 @@ async function joinProcedure(rid, name) {
     roomIdDisp.innerText = `ID: ${rid}`;
 
     // Update URL
-    if (!paramRoom) {
-        const u = new URL(window.location);
-        u.searchParams.set('room', rid);
-        window.history.pushState({}, '', u);
-    }
+    const u = new URL(window.location);
+    u.searchParams.set('room', rid);
+    window.history.pushState({}, '', u);
 
     // Mic Device Enum
     await refreshDeviceList();
@@ -100,7 +207,12 @@ async function joinProcedure(rid, name) {
 // --- SOCKET LOGIC ---
 async function connectSocket() {
     try {
-        const { rtpCapabilities, existingProducers, checkRole } = await request('joinRoom', { roomId: myRoomId, name: myName });
+        const uid = getUserId();
+        const { rtpCapabilities, existingProducers, checkRole } = await request('joinRoom', {
+            roomId: myRoomId,
+            name: myName,
+            userId: uid
+        });
 
         amHost = checkRole.isHost;
         updatePermissions(checkRole.canProduce);
@@ -167,26 +279,73 @@ socket.on('permissionGranted', ({ canProduce }) => {
 socket.on('newProducer', ({ producerId }) => consumeStream(producerId));
 
 socket.on('producerClosed', ({ producerId }) => {
-    const el = document.getElementById(`card-${producerId}`);
-    if (el) el.remove();
-    // Also check hidden audio elements
-    const audioEl = document.getElementById(`hidden-audio-${producerId}`);
-    if (audioEl) audioEl.remove();
+    removeStreamElement(producerId);
 });
 
-socket.on('producerForcedStop', () => {
-    // If I was streaming, stop everything
-    if (localAudioProducer) {
+socket.on('producerForcedStop', ({ producerId }) => {
+    // Check if it was one of mine
+    if (localAudioProducer && localAudioProducer.id === producerId) {
         toggleMic(false);
+        alert('Host stopped your Audio.');
     }
-    if (localVideoProducer) {
+    if (localVideoProducer && localVideoProducer.id === producerId) {
         toggleVideo(false);
+        alert('Host stopped your Video.');
     }
     if (isScreenSharing) {
-        stopScreenShare();
+        // Check if one of screen producers
+        const p = screenProducers.find(sp => sp.id === producerId);
+        if (p) {
+            stopScreenShare();
+            alert('Host stopped your Screen Share.');
+        }
     }
-    alert('Host stopped your stream.');
 });
+
+// Helper to remove stream elements
+function removeStreamElement(pid) {
+    const el = document.getElementById(`elem-${pid}`);
+    if (el) {
+        // Find parent card
+        const card = el.closest('.video-card');
+        el.remove();
+
+        if (card) {
+            // Updated State
+            const hasVideo = card.querySelector('video');
+            const hasAudio = card.querySelector('audio');
+
+            if (!hasVideo && !hasAudio) {
+                // Empty card -> Remove
+                card.remove();
+            } else if (!hasVideo) {
+                // No video -> Show placeholder
+                const ph = card.querySelector('.audio-placeholder');
+                if (ph) ph.style.display = 'flex';
+
+                // If it was audio, maybe reset icon? 
+                // Wait, if we removed audio, we should set icon to mic_off?
+                // But if we removed audio, `hasAudio` is false.
+                // If `hasAudio` is true (e.g. multiple mics?), we keep it.
+                // Assuming 1 mic per user:
+            }
+
+            if (!hasAudio && !hasVideo) {
+                // Already removed above
+            } else if (!hasAudio) {
+                // Reset mic icon if audio track gone but card stays (e.g. video only)
+                const icon = card.querySelector('.mic-icon i');
+                const iconDiv = card.querySelector('.mic-icon');
+                if (icon) icon.innerText = 'mic_off';
+                if (iconDiv) iconDiv.classList.remove('pulsing');
+            }
+        }
+    }
+
+    // Legacy cleanup for screen share separate cards (they used card-PID)
+    const legacyCard = document.getElementById(`card-screen-${pid}`);
+    if (legacyCard) legacyCard.remove();
+}
 
 // --- PERMISSIONS UI ---
 function updatePermissions(can) {
@@ -230,58 +389,79 @@ async function createTransports() {
 // --- DEVICE SELECT ---
 async function refreshDeviceList() {
     try {
-        await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        // Ensure perm updates
+        // await navigator.mediaDevices.getUserMedia({ audio: true, video: true }); // Avoid double permission prompt on load if possible, assume verified
+
         const devices = await navigator.mediaDevices.enumerateDevices();
 
         // Audio Inputs
-        const audioIns = devices.filter(d => d.kind === 'audioinput');
+        const mics = devices.filter(d => d.kind === 'audioinput');
         micDropdown.innerHTML = '';
-        audioIns.forEach(d => {
+        mics.forEach(d => {
             const div = document.createElement('div');
             div.className = 'mic-option';
             div.innerText = d.label || `Mic ${d.deviceId.substring(0, 4)}`;
             if (d.deviceId === selectedAudioDeviceId) div.classList.add('selected');
 
             div.onclick = () => {
-                selectedAudioDeviceId = d.deviceId;
-                refreshDeviceList();
-                micDropdown.classList.remove('show');
-                if (localAudioProducer) {
-                    toggleMic(false);
-                    setTimeout(() => toggleMic(true), 500);
-                }
+                selectMic(d.deviceId);
             };
             micDropdown.appendChild(div);
         });
 
         // Video Inputs
-        const videoIns = devices.filter(d => d.kind === 'videoinput');
+        const cams = devices.filter(d => d.kind === 'videoinput');
         videoDropdown.innerHTML = '';
-        videoIns.forEach(d => {
+        cams.forEach(d => {
             const div = document.createElement('div');
-            div.className = 'mic-option';
+            div.className = 'mic-option'; // Resize class if needed, reusing mic-option for compatible styling
             div.innerText = d.label || `Cam ${d.deviceId.substring(0, 4)}`;
             if (d.deviceId === selectedVideoDeviceId) div.classList.add('selected');
 
             div.onclick = () => {
-                selectedVideoDeviceId = d.deviceId;
-                refreshDeviceList();
-                videoDropdown.classList.remove('show');
-                if (localVideoProducer) {
-                    toggleVideo(false);
-                    setTimeout(() => toggleVideo(true), 500);
-                }
+                selectCam(d.deviceId);
             };
             videoDropdown.appendChild(div);
         });
 
-    } catch (e) { console.log('Device list error', e); }
+    } catch (e) {
+        console.error('Device list error:', e);
+    }
+}
+
+async function selectCam(deviceId) {
+    selectedVideoDeviceId = deviceId;
+    videoDropdown.classList.remove('show');
+    refreshDeviceList(); // Highlight selection
+
+    // Switch logic
+    if (localVideoProducer) {
+        console.log('Switching cam to', deviceId);
+        await toggleVideo(false);
+        setTimeout(() => toggleVideo(true), 500);
+    }
+}
+
+
+async function selectMic(deviceId) {
+    selectedAudioDeviceId = deviceId;
+    micDropdown.classList.remove('show');
+    refreshDeviceList(); // Highlight selection
+
+    // Switch logic
+    if (localAudioProducer) {
+        console.log('Switching mic to', deviceId);
+        await toggleMic(false);
+        setTimeout(() => toggleMic(true), 500);
+    }
 }
 
 
 // --- ACTIONS ---
 let isMicOn = false;
 let isVideoOn = false;
+// btnMic.onclick ... handled in HTML or below logic
+// btnVideo.onclick ... handled in HTML
 btnMic.onclick = () => toggleMic(!isMicOn);
 btnVideo.onclick = () => toggleVideo(!isVideoOn);
 btnMicMenu.onclick = (e) => { e.stopPropagation(); micDropdown.classList.toggle('show'); videoDropdown.classList.remove('show'); };
@@ -298,7 +478,7 @@ async function toggleMic(on) {
 
             localAudioProducer = await producerTransport.produce({
                 track,
-                appData: { source: 'mic' } // Tag as Mic
+                appData: { source: 'mic', peerId: socket.id } // Tag as Mic
             });
             producers.set(localAudioProducer.id, localAudioProducer);
 
@@ -317,8 +497,7 @@ async function toggleMic(on) {
         if (localAudioProducer) {
             socket.emit('producerClose', { producerId: localAudioProducer.id });
             localAudioProducer.close();
-            const el = document.getElementById(`card-${localAudioProducer.id}`);
-            if (el) el.remove();
+            removeStreamElement(localAudioProducer.id);
 
             producers.delete(localAudioProducer.id);
             localAudioProducer = null;
@@ -349,7 +528,7 @@ async function toggleVideo(on) {
 
             localVideoProducer = await producerTransport.produce({
                 track,
-                appData: { source: 'webcam' },
+                appData: { source: 'webcam', peerId: socket.id },
                 // Enable simulcast if needed to handle bandwidth, but for now specific HD
                 encodings: [
                     { maxBitrate: 500000, scaleResolutionDownBy: 2 }, // Low quality backup
@@ -366,18 +545,25 @@ async function toggleVideo(on) {
             // Local Placeholder
             addVideoCard(stream, localVideoProducer.id, false, true, { source: 'webcam' });
 
-            localVideoProducer.on('trackended', () => toggleVideo(false));
+            localVideoProducer.on('trackended', () => {
+                toggleVideo(false);
+            });
 
-        } catch (e) {
-            console.error(e);
+            // UI Update
+            btnVideo.classList.add('active');
+            btnVideo.querySelector('i').innerText = 'videocam';
+            btnVideo.querySelector('span').innerText = 'Stop Video';
+
+        } catch (err) {
+            console.error('Publish video error:', err);
             alert('Cannot access camera or device not found.');
         }
     } else {
+        // Stop Video
         if (localVideoProducer) {
             socket.emit('producerClose', { producerId: localVideoProducer.id });
             localVideoProducer.close();
-            const el = document.getElementById(`card-${localVideoProducer.id}`);
-            if (el) el.remove();
+            removeStreamElement(localVideoProducer.id);
 
             producers.delete(localVideoProducer.id);
             localVideoProducer = null;
@@ -385,6 +571,11 @@ async function toggleVideo(on) {
         isVideoOn = false;
         btnVideo.innerHTML = `<i class="material-icons">videocam_off</i><span>Start Video</span>`;
         btnVideo.classList.remove('active');
+
+        // UI Update
+        btnVideo.classList.remove('active');
+        btnVideo.querySelector('i').innerText = 'videocam_off';
+        btnVideo.querySelector('span').innerText = 'Start Video';
     }
 }
 
@@ -417,7 +608,7 @@ btnShareScreen.onclick = async () => {
         for (const track of stream.getTracks()) {
             const params = {
                 track,
-                appData: { source: 'screen' }
+                appData: { source: 'screen', peerId: socket.id }
             };
 
             // STRICT Screen Share Quality for Video
@@ -441,24 +632,36 @@ btnShareScreen.onclick = async () => {
                 // Handle "Stop Sharing" bubble from Browser
                 track.onended = () => stopScreenShare();
             }
-            // Audio Track -> Do nothing locally 
+            // Audio Track -> Do nothing locally
         }
-    } catch (e) { console.error(e); }
-};
+
+        // UI Update
+        btnShareScreen.classList.add('active', 'sharing');
+        btnShareScreen.querySelector('i').innerText = 'stop_screen_share';
+        btnShareScreen.querySelector('span').innerText = 'Stop Share';
+
+        isScreenSharing = true;
+    } catch (err) {
+        console.error('Screen share error:', err);
+    }
+}
 
 function stopScreenShare() {
-    isScreenSharing = false;
-    btnShareScreen.classList.remove('sharing');
-    btnShareScreen.innerHTML = `<i class="material-icons" style="color:#28a745">screen_share</i><span>Share</span>`;
+    if (!isScreenSharing) return;
 
     screenProducers.forEach(p => {
         socket.emit('producerClose', { producerId: p.id });
         p.close();
         producers.delete(p.id);
-        const el = document.getElementById(`card-${p.id}`);
-        if (el) el.remove();
+        removeStreamElement(p.id);
     });
     screenProducers = [];
+    isScreenSharing = false;
+
+    // UI Update
+    btnShareScreen.classList.remove('active', 'sharing');
+    btnShareScreen.querySelector('i').innerText = 'screen_share';
+    btnShareScreen.querySelector('span').innerText = 'Share';
 }
 
 
@@ -499,77 +702,114 @@ async function consumeStream(producerId) {
 }
 
 // --- UI CARD BUILDER ---
+// --- UI CARD BUILDER ---
 function addVideoCard(stream, pid, isAudio, isLocal, appData = {}) {
-    if (document.getElementById(`card-${pid}`)) return;
+    const peerId = appData.peerId || (isLocal ? socket.id : 'unknown');
+    const isScreen = appData.source === 'screen';
 
-    const card = document.createElement('div');
-    card.className = 'video-card';
-    card.id = `card-${pid}`;
+    // ID for the Card (Container)
+    // - Screen Share: unique card per share (card-screen-PID)
+    // - User Stream: unique card per user (card-user-PEERID)
+    const cardId = isScreen ? `card-screen-${pid}` : `card-user-${peerId}`;
 
-    // Content
-    if (isAudio) {
+    let card = document.getElementById(cardId);
+
+    if (!card) {
+        card = document.createElement('div');
+        card.className = 'video-card';
+        card.id = cardId;
+
+        let label = isLocal ? 'You' : `User ${peerId.substr(0, 4)}`;
+        if (isScreen) label += ' (Screen)';
+
+        // Base Structure
         card.innerHTML = `
             <div class="audio-placeholder">
-                <div class="mic-icon pulsing">
-                    <i class="material-icons" style="font-size:40px; color:white">mic</i>
+                <div class="mic-icon">
+                    <i class="material-icons" style="font-size:40px; color:white">mic_off</i>
                 </div>
             </div>
-            <audio autoplay></audio>
+            <div class="media-container" style="width:100%; height:100%; position:absolute; top:0; left:0;"></div>
+            <div class="name-tag">${label}</div>
+            <div class="card-overlay"></div>
         `;
-        const audio = card.querySelector('audio');
+
+        videoContainer.appendChild(card);
+
+        // Setup Overlay
+        const overlay = card.querySelector('.card-overlay');
+
+        // Fullscreen
+        const fsBtn = document.createElement('button');
+        fsBtn.className = 'overlay-btn btn-fullscreen';
+        fsBtn.innerHTML = '<i class="material-icons">fullscreen</i>';
+        fsBtn.onclick = () => enterFullscreen(card, overlay);
+        overlay.appendChild(fsBtn);
+
+        // Host Stop (only for remote users)
+        if (amHost && !isLocal && !isScreen) {
+            // We can't easily force stop per-track here if they are merged, 
+            // but we can add a "Kick/Stop" button that stops everything for that user?
+            // For now, let's keep it simple: no per-track stop btn in merged view yet, 
+            // or add it if we track producers.
+            // Let's rely on the Participant List for kicking/muting.
+        } else if (amHost && isScreen && !isLocal) {
+            // For screen share, we can allow stop
+            const stopBtn = document.createElement('button');
+            stopBtn.className = 'overlay-btn btn-stop';
+            stopBtn.innerHTML = '<i class="material-icons">stop</i>';
+            stopBtn.onclick = () => {
+                if (confirm('Stop this screen share?')) socket.emit('forceStopProducer', { producerId: pid });
+            };
+            overlay.appendChild(stopBtn);
+        }
+
+        setupOverlayAutohide(card, overlay);
+    }
+
+    // Check if we already have this specific element
+    if (document.getElementById(`elem-${pid}`)) return; // Already added
+
+    // Add Media Element
+    const mediaContainer = card.querySelector('.media-container');
+
+    if (isAudio) {
+        // Audio Track
+        const audio = document.createElement('audio');
+        audio.id = `elem-${pid}`;
         audio.srcObject = stream;
+        audio.autoplay = true;
         if (isLocal) audio.muted = true;
+        audio.style.display = 'none'; // Hidden audio
+        mediaContainer.appendChild(audio);
+
+        // Update Placeholder to show active mic
+        const icon = card.querySelector('.mic-icon i');
+        const iconDiv = card.querySelector('.mic-icon');
+        icon.innerText = 'mic';
+        iconDiv.classList.add('pulsing');
+
     } else {
+        // Video Track
         const video = document.createElement('video');
+        video.id = `elem-${pid}`;
         video.autoplay = true;
         video.playsInline = true;
         video.srcObject = stream;
         if (isLocal) video.muted = true;
-        card.appendChild(video);
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'contain';
+
+        // Clear placeholder if video is present (z-index or remove)
+        // With styling, we can just put video on top
+        // But cleaner to hide placeholder
+        card.querySelector('.audio-placeholder').style.display = 'none';
+
+        mediaContainer.appendChild(video);
     }
-
-    const overlay = document.createElement('div');
-    overlay.className = 'card-overlay';
-
-    // Full Screen Btn
-    const fsBtn = document.createElement('button');
-    fsBtn.className = 'overlay-btn btn-fullscreen';
-    fsBtn.innerHTML = '<i class="material-icons">fullscreen</i>';
-    fsBtn.title = 'Full Screen';
-    fsBtn.onclick = () => {
-        enterFullscreen(card, overlay);
-    };
-    overlay.appendChild(fsBtn);
-
-    if (amHost && !isLocal) {
-        const stopBtn = document.createElement('button');
-        stopBtn.className = 'overlay-btn btn-stop';
-        stopBtn.innerHTML = '<i class="material-icons">stop</i>';
-        stopBtn.title = 'Force Stop';
-        stopBtn.onclick = () => {
-            if (confirm('Force stop this stream?')) {
-                socket.emit('forceStopProducer', { producerId: pid });
-            }
-        };
-        overlay.appendChild(stopBtn);
-    }
-
-    card.appendChild(overlay);
-
-    // Name Tag
-    const tag = document.createElement('div');
-    tag.className = 'name-tag';
-
-    let label = isLocal ? 'You' : `User (${pid.substr(0, 4)})`;
-    if (appData.source === 'screen') label += ' (Screen)';
-
-    tag.innerText = label;
-    card.appendChild(tag);
-
-    setupOverlayAutohide(card, overlay);
-
-    videoContainer.appendChild(card);
 }
+
 
 // --- FULLSCREEN & AUTOHIDE LOGIC ---
 
@@ -611,12 +851,21 @@ function setupOverlayAutohide(card, overlay) {
                 overlay.classList.remove('visible');
                 card.style.cursor = 'none';
             }
-        }, 5000);
+        }, 2000);
     };
 
     card.addEventListener('mousemove', show);
-    card.addEventListener('click', show);
+    card.addEventListener('click', show); // e.g. on mobile tap
 }
+
+// --- EXPOSE TO WINDOW ---
+window.toggleMic = toggleMic;
+window.toggleVideo = toggleVideo;
+window.toggleScreenShare = () => { btnShareScreen.onclick(); };
+window.joinProcedure = joinProcedure;
+window.refreshDeviceList = refreshDeviceList;
+window.selectMic = selectMic;
+window.selectCam = selectCam;
 
 
 function request(type, data = {}) {

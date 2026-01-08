@@ -87,35 +87,47 @@ io.on('connection', (socket) => {
         consumers: new Map(),
     };
 
-    socket.on('joinRoom', async ({ roomId, name }, callback) => {
+    // JOIN
+    socket.on('joinRoom', async ({ roomId, name, userId }, callback) => {
         try {
             const router = await getOrCreateRouter(roomId);
-            socket.join(roomId);
             socket.data.roomId = roomId;
-            socket.data.name = name;
 
+            // Clean previous if any
+            // ...
+
+            if (!rooms.has(roomId)) {
+                // Should exist from getOrCreateRouter
+                rooms.set(roomId, { router, peers: new Map(), hostUserId: null });
+            }
             const room = rooms.get(roomId);
 
             // Determine Role
-            const isFirstUser = room.peers.size === 0;
-            if (isFirstUser) {
-                socket.data.isHost = true;
-                socket.data.canProduce = true;
-            } else {
-                socket.data.isHost = false;
-                socket.data.canProduce = false;
+            // 1. If room empty -> First user is Host
+            // 2. If userId matches room.hostUserId -> Reclaim Host
+            let isHost = false;
+            if (room.peers.size === 0 && !room.hostUserId) {
+                isHost = true;
+                room.hostUserId = userId; // Claim Host Identity
+            } else if (room.hostUserId === userId) {
+                isHost = true; // Reclaim
             }
+
+            socket.data.isHost = isHost;
+            socket.data.canProduce = isHost; // Host always produces for now, or logic
+            socket.data.userId = userId;
 
             const peerInfo = {
                 id: socket.id,
                 name: name,
-                isHost: socket.data.isHost,
+                userId: userId,
+                isHost: isHost,
                 canProduce: socket.data.canProduce
             };
 
             room.peers.set(socket.id, peerInfo);
 
-            console.log(`Socket ${socket.id} (${name}) joined room ${roomId}. Host: ${socket.data.isHost}`);
+            console.log(`Socket ${socket.id} (${name}) joined room ${roomId}. Host: ${isHost} (UID: ${userId})`);
 
             // Send existing producers
             const existingProducers = [];
@@ -128,7 +140,7 @@ io.on('connection', (socket) => {
             callback({
                 rtpCapabilities: router.rtpCapabilities,
                 existingProducers,
-                checkRole: { isHost: socket.data.isHost, canProduce: socket.data.canProduce }
+                checkRole: { isHost: isHost, canProduce: socket.data.canProduce }
             });
 
             broadcastParticipants(roomId);
@@ -258,6 +270,9 @@ io.on('connection', (socket) => {
         try {
             if (!socket.data.canProduce) throw new Error('Permission Denied');
             if (!socket.data.producerTransport) throw new Error('No carrier');
+
+            // Inject peerId into appData so consumers know who owns this
+            appData = { ...appData, peerId: socket.id };
 
             const producer = await socket.data.producerTransport.produce({ kind, rtpParameters, appData });
             socket.data.producers.set(producer.id, producer);

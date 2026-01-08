@@ -8,13 +8,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #121212;
-      --bg-panel: #1e1e1e;
-      --primary: #0e71eb;
-      --danger: #e02424;
-      --success: #3be665;
-      --text-main: #ffffff;
+      --bg-dark: #0a0a0a;
+      --bg-panel: rgba(30, 30, 30, 0.7);
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --success: #10b981;
+      --text-main: #f3f4f6;
       --text-muted: #9ca3af;
+      --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
 
     body {
@@ -34,68 +37,84 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      background: radial-gradient(circle at center, #1e293b 0%, #0a0a0a 100%);
     }
 
     .auth-box {
       background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: var(--glass-border);
       padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      width: 100%;
+      border-radius: 16px;
+      box-shadow: var(--glass-shadow);
+      width: 90%;
       max-width: 400px;
       text-align: center;
     }
 
     .auth-box h2 {
-      margin-bottom: 25px;
-      font-weight: 600;
+      margin-bottom: 30px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
     }
 
     input.nice-input {
       width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      background: #2d2d2d;
-      border: 1px solid #444;
-      border-radius: 6px;
+      padding: 14px;
+      margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
       color: white;
-      font-size: 15px;
+      font-size: 16px;
       box-sizing: border-box;
+      transition: all 0.2s;
     }
 
     input.nice-input:focus {
       border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.1);
       outline: none;
     }
 
     .btn-primary,
     .btn-secondary {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       border: none;
-      border-radius: 6px;
-      font-size: 15px;
-      font-weight: 500;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
-      transition: transform 0.1s, opacity 0.2s;
+      transition: all 0.2s;
     }
 
     .btn-primary {
       background: var(--primary);
       color: white;
-      margin-bottom: 10px;
     }
 
     .btn-primary:hover {
-      filter: brightness(1.1);
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .separator {
-      margin: 20px 0;
+      margin: 25px 0;
       color: var(--text-muted);
-      font-size: 0.9em;
+      font-size: 0.85em;
       position: relative;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .separator::before,
@@ -103,9 +122,9 @@
       content: "";
       position: absolute;
       top: 50%;
-      width: 40%;
+      width: 35%;
       height: 1px;
-      background: #444;
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .separator::before {
@@ -121,6 +140,7 @@
       display: flex;
       flex-direction: column;
       height: 100%;
+      position: relative;
     }
 
     .hidden {
@@ -129,16 +149,23 @@
 
     /* Top Bar */
     .top-bar {
-      height: 50px;
+      height: 60px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 20px;
-      background: rgba(0, 0, 0, 0.3);
+      padding: 0 24px;
       position: absolute;
-      width: 100%;
-      z-index: 10;
-      box-sizing: border-box;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+      pointer-events: none;
+      /* Let clicks pass through */
+    }
+
+    .top-bar>* {
+      pointer-events: auto;
     }
 
     .meeting-info {
@@ -146,7 +173,11 @@
       font-weight: 500;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 16px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
     }
 
     .secure-badge {
@@ -154,21 +185,22 @@
       display: flex;
       align-items: center;
       font-size: 12px;
-      gap: 5px;
+      gap: 6px;
     }
 
     .copy-link-btn {
-      background: rgba(255, 255, 255, 0.1);
+      background: transparent;
       border: none;
-      color: white;
-      padding: 5px 10px;
+      color: var(--text-muted);
+      padding: 4px;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 12px;
+      display: flex;
     }
 
     .copy-link-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      background: rgba(255, 255, 255, 0.1);
     }
 
     /* Main Stage */
@@ -177,8 +209,7 @@
       display: flex;
       position: relative;
       overflow: hidden;
-      margin-top: 50px;
-      margin-bottom: 70px;
+      background: #000;
     }
 
     .video-grid {
@@ -188,57 +219,66 @@
       justify-content: center;
       align-items: center;
       align-content: center;
-      padding: 10px;
-      gap: 10px;
-      background: #000;
+      padding: 20px;
+      gap: 16px;
       overflow-y: auto;
+      height: 100%;
+      box-sizing: border-box;
     }
 
-    /* Video Card Responsive Sizing */
+    /* Video Card */
     .video-card {
-      background: #222;
-      border-radius: 8px;
+      background: #1a1a1a;
+      border-radius: 12px;
       overflow: hidden;
       position: relative;
-      /* Default: roughly 2 per row */
-      flex: 1 1 45%;
+      flex: 1 1 400px;
+      /* Responsive basis */
       max-width: 100%;
       aspect-ratio: 16/9;
       max-height: 100%;
-      /* Allow growth */
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-      border: 2px solid transparent;
-      transition: border-color 0.2s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s ease;
     }
 
-    /* If single chlid, take up more space */
+    /* Dynamic Grid Sizing Helper - applied via JS usually but basic here */
     .video-grid:has(> .video-card:only-child) .video-card {
-      flex: 1 1 100%;
-      width: 100%;
-      max-height: 85vh;
+      flex: 0 1 100%;
+      max-width: 1200px;
+      height: auto;
+      max-height: 80vh;
+    }
+
+    .video-grid:has(> .video-card:nth-last-child(n+2)) .video-card {
+      flex: 1 1 45%;
     }
 
     .video-card.speaking {
-      border-color: var(--success);
+      border: 2px solid var(--success);
     }
 
     .video-card video {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      pointer-events: none;
+      /* Ensure no crop */
+      background: black;
     }
 
     .name-tag {
       position: absolute;
-      bottom: 10px;
-      left: 10px;
+      bottom: 12px;
+      left: 12px;
       background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
       color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      z-index: 5;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 10;
+      pointer-events: none;
     }
 
     /* Audio Placeholder */
@@ -249,36 +289,37 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      background: #2a2a2a;
+      background: #1e1e1e;
     }
 
     .mic-icon {
-      font-size: 40px;
-      background: #444;
-      width: 80px;
-      height: 80px;
+      width: 100px;
+      height: 100px;
+      background: #2a2a2a;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
-      margin-bottom: 10px;
+      color: #555;
     }
 
-    .pulsing {
-      animation: pulse 1.5s infinite;
+    .mic-icon.pulsing {
+      background: #333;
+      color: white;
+      animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
       0% {
-        box-shadow: 0 0 0 0 rgba(59, 230, 101, 0.4);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
       }
 
       70% {
-        box-shadow: 0 0 0 15px rgba(59, 230, 101, 0);
+        box-shadow: 0 0 0 20px rgba(16, 185, 129, 0);
       }
 
       100% {
-        box-shadow: 0 0 0 0 rgba(59, 230, 101, 0);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
       }
     }
 
@@ -347,46 +388,70 @@
     }
 
 
-    /* Sidebar */
+    /* Sidebar - Participants */
     .sidebar {
-      width: 300px;
-      background: #181818;
+      width: 320px;
+      background: #111;
       border-left: 1px solid #333;
       display: flex;
       flex-direction: column;
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 30;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar:not(.hidden) {
+      transform: translateX(0);
+      display: flex !important;
+      /* Override .hidden display:none properly */
     }
 
     .sidebar-header {
-      padding: 15px;
+      padding: 20px;
       font-weight: 600;
-      border-bottom: 1px solid #333;
+      border-bottom: 1px solid #222;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+    }
+
+    .close-sidebar-btn {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
     }
 
     #participant-list {
       flex: 1;
       overflow-y: auto;
+      padding: 10px;
     }
 
     .p-item {
-      padding: 10px 15px;
+      padding: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid #252525;
+      border-bottom: 1px solid #222;
+      color: #ddd;
     }
 
     .p-avatar {
-      width: 30px;
-      height: 30px;
-      background: #444;
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
       border-radius: 50%;
-      margin-right: 10px;
+      margin-right: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-weight: 600;
+      font-size: 14px;
     }
 
     .p-details {
@@ -413,107 +478,150 @@
     }
 
 
-    /* Bottom Bar */
+    /* Bottom Bar - Floating */
     .bottom-bar {
-      height: 70px;
-      background: #1a1a1a;
-      border-top: 1px solid #333;
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 20, 0.85);
+      /* Semi-transparent */
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 10px 20px;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      padding: 0 20px;
-      position: absolute;
-      bottom: 0;
-      width: 100%;
+      gap: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      z-index: 40;
+      width: auto;
+      max-width: 95%;
+      height: 72px;
       box-sizing: border-box;
+      white-space: nowrap;
     }
 
     .left-controls {
-      flex: 1;
       display: flex;
-      gap: 15px;
-      justify-content: flex-start;
+      align-items: center;
+      gap: 16px;
     }
 
-    .center-controls {
-      display: flex;
-      gap: 15px;
-    }
-
-    .right-controls {
-      flex: 1;
-      display: flex;
-      justify-content: flex-end;
-    }
-
+    /* Control Buttons */
     .control-btn {
       background: transparent;
       border: none;
-      color: #ddd;
+      color: var(--text-muted);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
+      gap: 6px;
       font-size: 11px;
+      font-weight: 500;
       cursor: pointer;
-      width: 70px;
-      padding: 8px 0;
+      width: 72px;
+      /* Fixed width for consistency */
+      height: 60px;
       border-radius: 8px;
+      transition: all 0.2s;
+      position: relative;
     }
 
-    .control-btn i {
-      font-size: 20px;
+    .control-btn:hover:enabled {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      transform: translateY(-2px);
     }
 
-    .control-btn:hover {
-      background: #333;
+    .control-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
     }
 
     .control-btn.active {
-      color: var(--success);
+      color: white;
+    }
+
+    .control-btn.active i {
+      color: white;
+      /* Neutral when active (mic on) */
+    }
+
+    /* Specific colors for Off states */
+    .control-btn i {
+      font-size: 24px;
+    }
+
+    /* Mic OFF / Video OFF => Red line through */
+    .control-btn:not(.active) i {
+      /* Handled by icon name change (mic_off) in JS, but we can style if needed */
     }
 
     .control-btn.danger {
       color: var(--danger);
     }
 
+    .control-btn.danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
     .control-btn.sharing {
-      color: var(--danger);
-      animation: pulse-red 2s infinite;
+      color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
     }
 
-    @keyframes pulse-red {
-      0% {
-        text-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
-      }
-
-      50% {
-        text-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
-      }
-
-      100% {
-        text-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
-      }
-    }
-
-
+    /* Dropdowns (Mic/Video Select) */
     .mic-select-wrap {
       position: relative;
-      display: inline-block;
+      display: flex;
+      flex-direction: row;
+      /* Horizontal alignment */
+      align-items: center;
+      gap: 2px;
+      /* Small gap between button and caret */
+    }
+
+    /* Caret specifically */
+    .btn-caret {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 100%;
+      /* Match height of parent roughly */
+      border-radius: 4px;
+    }
+
+    .btn-caret:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
     }
 
     .mic-dropdown {
       position: absolute;
-      bottom: 60px;
+      bottom: 100%;
+      /* Render above the button */
       left: 0;
-      background: #2a2a2a;
-      border: 1px solid #444;
-      border-radius: 6px;
-      min-width: 200px;
+      transform: none;
+      /* Align to left edge of container */
+      background: #252525;
+      border: 1px solid #333;
+      border-radius: 8px;
+      min-width: 220px;
       display: none;
       flex-direction: column;
       z-index: 100;
-      padding: 5px;
+      padding: 6px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+      margin-bottom: 12px;
     }
 
     .mic-dropdown.show {
@@ -521,22 +629,92 @@
     }
 
     .mic-option {
-      padding: 8px;
+      padding: 10px 14px;
       font-size: 13px;
       cursor: pointer;
-      text-align: left;
       color: #ccc;
+      border-radius: 6px;
+      transition: background 0.1s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .mic-option:hover {
-      background: #444;
+      background: var(--primary);
       color: white;
-      border-radius: 4px;
     }
 
     .mic-option.selected {
       color: var(--primary);
-      font-weight: bold;
+      font-weight: 700;
+    }
+
+    .mic-option.selected:hover {
+      color: white;
+    }
+
+    /* Menu caret button */
+    .btn-caret {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 50%;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* === MOBILE RESPONSIVE === */
+    @media (max-width: 768px) {
+
+      /* Bottom Bar Compact */
+      .bottom-bar {
+        bottom: 16px;
+        padding: 8px 12px;
+        gap: 8px;
+        height: 60px;
+        width: 90%;
+      }
+
+      .control-btn {
+        width: 44px;
+        /* Circle/Square buttons */
+        height: 44px;
+        border-radius: 50%;
+        /* Circle look */
+        background: rgba(255, 255, 255, 0.05);
+        /* Slight bg */
+      }
+
+      .control-btn span {
+        display: none;
+        /* Hide labels */
+      }
+
+      .control-btn i {
+        font-size: 20px;
+      }
+
+      /* Sidebar Fullscreen on Mobile */
+      .sidebar {
+        width: 100%;
+        border-left: none;
+        background: #0a0a0a;
+      }
+
+      /* Grid - Single Column */
+      .video-card {
+        flex: 1 1 100%;
+        aspect-ratio: 4/3;
+        /* Taller for mobile */
+      }
     }
   </style>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -586,7 +764,7 @@
       <div class="video-grid" id="video-container">
       </div>
 
-      <div class="sidebar" id="sidebar">
+      <div class="sidebar hidden" id="sidebar">
         <div class="sidebar-header">
           <span>Participants</span>
           <span id="participant-count" style="font-weight:400; color:#888;">(0)</span>
@@ -599,58 +777,63 @@
     <!-- Bottom Controls -->
     <div class="bottom-bar">
       <div class="left-controls">
+
         <!-- Mic Group -->
         <div class="mic-select-wrap">
-          <button id="btn-mic" class="control-btn" disabled>
+          <button id="btn-mic" class="control-btn" onclick="toggleMic()">
             <i class="material-icons">mic_off</i>
             <span>Unmute</span>
           </button>
-          <button id="btn-mic-menu" class="control-btn"
-            style="width:20px; padding:0; position:absolute; right:-15px; top:10px; height:30px;" disabled>
-            <i class="material-icons" style="font-size:14px;">expand_less</i>
+          <button id="btn-mic-menu" class="btn-caret" onclick="toggleMicMenu()">
+            <i class="material-icons" style="font-size:14px">expand_less</i>
           </button>
-          <div class="mic-dropdown" id="mic-dropdown">
-          </div>
+          <div id="mic-dropdown" class="mic-dropdown"></div>
         </div>
 
         <!-- Video Group -->
-        <div class="mic-select-wrap" style="margin-left: 20px;">
-          <button id="btn-video" class="control-btn" disabled>
+        <div class="mic-select-wrap"> <!-- Reusing same wrapper style for consistency -->
+          <button id="btn-cam" class="control-btn" onclick="toggleVideo()">
             <i class="material-icons">videocam_off</i>
             <span>Start Video</span>
           </button>
-          <button id="btn-video-menu" class="control-btn"
-            style="width:20px; padding:0; position:absolute; right:-15px; top:10px; height:30px;" disabled>
-            <i class="material-icons" style="font-size:14px;">expand_less</i>
+          <button id="btn-video-menu" class="btn-caret" onclick="toggleVideoMenu()">
+            <i class="material-icons" style="font-size:14px">expand_less</i>
           </button>
-          <div class="mic-dropdown" id="video-dropdown">
-          </div>
+          <div id="video-dropdown" class="mic-dropdown"></div>
         </div>
-      </div>
 
-      <div class="center-controls">
-        <!-- Share Btn with Toggle State -->
-        <button id="btn-share-screen" class="control-btn" disabled>
-          <i class="material-icons" style="color:#28a745">screen_share</i>
+        <button id="btn-share-screen" class="control-btn" onclick="toggleScreenShare()">
+          <i class="material-icons">screen_share</i>
           <span>Share</span>
         </button>
 
-        <button id="btn-participants" class="control-btn active">
+        <button id="btn-participants" class="control-btn" onclick="toggleSidebar()">
           <i class="material-icons">people</i>
           <span>Participants</span>
         </button>
-      </div>
 
-      <div class="right-controls">
-        <button class="control-btn danger" onclick="location.reload()">
-          <i class="material-icons">exit_to_app</i>
+        <button class="control-btn danger" onclick="leaveRoom()">
+          <i class="material-icons">call_end</i>
           <span>Leave</span>
         </button>
       </div>
-    </div>
-  </div>
 
-  <script src="dist/client.js"></script>
+      <!-- Sidebar -->
+      <div id="sidebar" class="sidebar hidden">
+        <div class="sidebar-header">
+          <span>Participants</span>
+          <button class="close-sidebar-btn" onclick="toggleSidebar()">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div id="participant-list">
+          <!-- JS Populated -->
+        </div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="dist/client.js"></script>
 </body>
 
 </html>
