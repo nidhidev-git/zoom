@@ -135,8 +135,8 @@ if (paramRoom) {
     joinMode.classList.remove('hidden');
     document.getElementById('join-room-display').innerText = paramRoom;
 
-    // Auto-fill Name if available
-    const savedName = localStorage.getItem('zoom_name');
+    // Auto-fill Name if available (Room Specific)
+    const savedName = localStorage.getItem(`zoom_name_${paramRoom}`);
     if (savedName) {
         document.getElementById('join-name-input').value = savedName;
         // Auto-join immediately
@@ -146,30 +146,31 @@ if (paramRoom) {
 } else {
     // If no room in URL but room in localstorage? 
     // Maybe better to wait for user action unless it's a "recover" scenario.
-    const savedName = localStorage.getItem('zoom_name');
-    if (savedName) {
-        document.getElementById('host-name-input').value = savedName;
-        document.getElementById('join-name-input-manual').value = savedName;
-    }
+    // We can't easily guess the room if not in URL, but we can look for "last_room"?
+    // User wants "for 1111 he only rejoin if 1111".
+    // So if no URL param, we do NOTHING (standard behavior) or maybe fill name if we track "last used name"?
+    // Let's just leave it blank or fill global name if we want, but User asked for specificity.
+    // We will do nothing if no room param.
 }
 
 document.getElementById('btn-create').onclick = () => {
     const name = document.getElementById('host-name-input').value.trim();
     if (!name) return alert('Name required');
-    localStorage.setItem('zoom_name', name);
-    joinProcedure(Math.random().toString(36).substring(2, 7), name);
+    const newRoom = Math.random().toString(36).substring(2, 7);
+    localStorage.setItem(`zoom_name_${newRoom}`, name);
+    joinProcedure(newRoom, name);
 };
 document.getElementById('btn-join-manual').onclick = () => {
     const r = document.getElementById('room-id-input').value.trim();
     const n = document.getElementById('join-name-input-manual').value.trim();
     if (!r || !n) return alert('Missing fields');
-    localStorage.setItem('zoom_name', n);
+    localStorage.setItem(`zoom_name_${r}`, n);
     joinProcedure(r, n);
 };
 document.getElementById('btn-join').onclick = () => {
     const n = document.getElementById('join-name-input').value.trim();
     if (!n) return alert('Name required');
-    localStorage.setItem('zoom_name', n);
+    localStorage.setItem(`zoom_name_${paramRoom}`, n);
     joinProcedure(paramRoom, n);
 };
 

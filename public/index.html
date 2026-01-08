@@ -218,7 +218,8 @@
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
-      align-content: center;
+      align-content: flex-start;
+      /* Fix for overflow: Start from top */
       padding: 20px;
       gap: 16px;
       overflow-y: auto;
@@ -557,9 +558,7 @@
     }
 
     /* Mic OFF / Video OFF => Red line through */
-    .control-btn:not(.active) i {
-      /* Handled by icon name change (mic_off) in JS, but we can style if needed */
-    }
+
 
     .control-btn.danger {
       color: var(--danger);
@@ -678,12 +677,11 @@
       /* Bottom Bar Compact */
       .bottom-bar {
         bottom: 20px;
-        /* Raised slightly for gesture bar */
         padding: 8px 12px;
-        gap: 8px;
+        gap: 15px;
         height: 60px;
-        width: 90%;
-        max-width: 400px;
+        width: max-content;
+        max-width: 95vw;
       }
 
       .left-controls {
