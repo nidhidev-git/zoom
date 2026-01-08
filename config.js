@@ -1,0 +1,67 @@
+const os = require('os');
+const path = require('path');
+
+module.exports = {
+    listenIp: '0.0.0.0',
+    listenPort: 3000,
+    sslCrt: path.join(__dirname, 'certs/cert.pem'),
+    sslKey: path.join(__dirname, 'certs/key.pem'),
+
+    mediasoup: {
+        // Worker settings
+        numWorkers: Object.keys(os.cpus()).length,
+        worker: {
+            rtcMinPort: 10000,
+            rtcMaxPort: 10100,
+            logLevel: 'warn',
+            logTags: [
+                'info',
+                'ice',
+                'dtls',
+                'rtp',
+                'srtp',
+                'rtcp',
+                // 'rtx',
+                // 'bwe',
+                // 'score',
+                // 'simulcast',
+                // 'svc',
+                // 'sctp',
+            ],
+        },
+        // Router settings
+        router: {
+            mediaCodecs: [
+                {
+                    kind: 'audio',
+                    mimeType: 'audio/opus',
+                    clockRate: 48000,
+                    channels: 2
+                },
+                {
+                    kind: 'video',
+                    mimeType: 'video/VP8',
+                    clockRate: 90000,
+                    parameters:
+                    {
+                        'x-google-start-bitrate': 1000
+                    }
+                },
+            ]
+        },
+        // Transport settings
+        webRtcTransport: {
+            listenIps: [
+                {
+                    ip: '0.0.0.0', // Transports will listen on all interfaces
+                    announcedIp: '127.0.0.1' // ANNOUNCE THIS IP TO CLIENTS. For LAN, use your LAN IP. For local, 127.0.0.1.
+                }
+            ],
+            initialAvailableOutgoingBitrate: 1000000,
+            minimumAvailableOutgoingBitrate: 600000,
+            maxSctpMessageSize: 262144,
+            // Additional options that might helps
+            maxIncomingBitrate: 1500000
+        }
+    }
+};
