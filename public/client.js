@@ -141,7 +141,36 @@ if (paramRoom) {
         document.getElementById('join-name-input').value = savedName;
         // Auto-join immediately
         console.log('Auto-joining...', savedName);
-        joinProcedure(paramRoom, savedName);
+        // Show Rejoin Screen (Lobby)
+        const rejoinScreen = document.getElementById('rejoin-screen');
+        const rejoinAvatar = document.getElementById('rejoin-avatar');
+        const rejoinName = document.getElementById('rejoin-user-name');
+        const rejoinRoom = document.getElementById('rejoin-room-name');
+
+        if (rejoinScreen) {
+            loginScreen.classList.add('hidden');
+            rejoinScreen.classList.remove('hidden');
+
+            rejoinAvatar.innerText = savedName.charAt(0);
+            rejoinName.innerText = savedName;
+            rejoinRoom.innerText = paramRoom;
+
+            document.getElementById('btn-rejoin').onclick = () => {
+                rejoinScreen.classList.add('hidden');
+                joinProcedure(paramRoom, savedName);
+            };
+
+            document.getElementById('btn-rejoin-cancel').onclick = () => {
+                rejoinScreen.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+                createMode.classList.add('hidden');
+                joinMode.classList.remove('hidden');
+                localStorage.removeItem(`zoom_name_${paramRoom}`);
+                document.getElementById('join-name-input').value = '';
+            };
+        } else {
+            joinProcedure(paramRoom, savedName);
+        }
     }
 } else {
     // If no room in URL but room in localstorage? 
