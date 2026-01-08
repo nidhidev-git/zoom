@@ -16,21 +16,10 @@ process.on('unhandledRejection', (reason, promise) => {
 const app = express();
 let httpsServer;
 
-// Check if we are checking for certs or just falling back to http (Render handles SSL termination)
-// Or simply check if file exists
-if (fs.existsSync(config.sslKey) && fs.existsSync(config.sslCrt)) {
-    const options = {
-        key: fs.readFileSync(config.sslKey),
-        cert: fs.readFileSync(config.sslCrt),
-    };
-    httpsServer = https.createServer(options, app);
-    console.log('Using HTTPS with local certificates.');
-} else {
-    // Fallback to HTTP (Production / Render)
-    const http = require('http');
-    httpsServer = http.createServer(app);
-    console.log('SSL certificates not found. Using HTTP (likely behind reverse proxy/Render).');
-}
+// Force HTTP for Render (SSL terminated at load balancer)
+const http = require('http');
+httpsServer = http.createServer(app);
+console.log('Forcing HTTP (Render/Proxied environment).');
 
 const io = socketIo(httpsServer);
 
@@ -353,6 +342,5 @@ async function createWebRtcTransport(router) {
 }
 
 httpsServer.listen(config.listenPort, () => {
-    const proto = (fs.existsSync(config.sslKey) && fs.existsSync(config.sslCrt)) ? 'https' : 'http';
-    console.log(`Listening on ${proto}://${config.listenIp}:${config.listenPort}`);
+    console.log(`Listening on http://${config.listenIp}:${config.listenPort}`);
 });

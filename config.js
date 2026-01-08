@@ -1,5 +1,6 @@
 const os = require('os');
 const path = require('path');
+require('dotenv').config();
 
 module.exports = {
     listenIp: '0.0.0.0',
@@ -11,8 +12,8 @@ module.exports = {
         // Worker settings
         numWorkers: Object.keys(os.cpus()).length,
         worker: {
-            rtcMinPort: 20000,
-            rtcMaxPort: 20100,
+            rtcMinPort: Number(process.env.RTC_MIN_PORT) || 20000,
+            rtcMaxPort: Number(process.env.RTC_MAX_PORT) || 20100,
             logLevel: 'warn',
             logTags: [
                 'info',
