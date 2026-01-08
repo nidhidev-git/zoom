@@ -780,10 +780,15 @@ function addVideoCard(stream, pid, isAudio, isLocal, appData = {}) {
         const audio = document.createElement('audio');
         audio.id = `elem-${pid}`;
         audio.srcObject = stream;
-        audio.autoplay = true;
         if (isLocal) audio.muted = true;
         audio.style.display = 'none'; // Hidden audio
         mediaContainer.appendChild(audio);
+
+        // Attempt Play
+        audio.play().catch(e => {
+            console.warn("Audio Autoplay failed", e);
+            showPlayOverlay(card, audio);
+        });
 
         // Update Placeholder to show active mic
         const icon = card.querySelector('.mic-icon i');
@@ -795,7 +800,6 @@ function addVideoCard(stream, pid, isAudio, isLocal, appData = {}) {
         // Video Track
         const video = document.createElement('video');
         video.id = `elem-${pid}`;
-        video.autoplay = true;
         video.playsInline = true;
         video.srcObject = stream;
         if (isLocal) video.muted = true;
@@ -809,7 +813,42 @@ function addVideoCard(stream, pid, isAudio, isLocal, appData = {}) {
         card.querySelector('.audio-placeholder').style.display = 'none';
 
         mediaContainer.appendChild(video);
+
+        // Attempt Play
+        video.play().catch(e => {
+            console.warn("Video Autoplay failed", e);
+            showPlayOverlay(card, video);
+        });
     }
+}
+
+function showPlayOverlay(card, mediaElement) {
+    // Check if already exists
+    if (card.querySelector('.play-overlay')) return;
+
+    const ov = document.createElement('div');
+    ov.className = 'play-overlay';
+    ov.innerHTML = '<i class="material-icons" style="font-size:48px; color:white">play_circle_outline</i><div style="color:white; font-size:12px; margin-top:4px">Tap to Play</div>';
+    ov.style.position = 'absolute';
+    ov.style.top = '0';
+    ov.style.left = '0';
+    ov.style.right = '0';
+    ov.style.bottom = '0';
+    ov.style.background = 'rgba(0,0,0,0.6)';
+    ov.style.display = 'flex';
+    ov.style.flexDirection = 'column';
+    ov.style.alignItems = 'center';
+    ov.style.justifyContent = 'center';
+    ov.style.zIndex = '50';
+    ov.style.cursor = 'pointer';
+
+    ov.onclick = () => {
+        mediaElement.play()
+            .then(() => ov.remove())
+            .catch(err => console.error("Play failed again", err));
+    };
+
+    card.appendChild(ov);
 }
 
 

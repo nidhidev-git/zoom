@@ -233,8 +233,8 @@
       border-radius: 12px;
       overflow: hidden;
       position: relative;
-      flex: 1 1 400px;
-      /* Responsive basis */
+      flex: 0 0 calc(50% - 12px);
+      /* 2 per row desktop (gap 16px) */
       max-width: 100%;
       aspect-ratio: 16/9;
       max-height: 100%;
@@ -685,8 +685,8 @@
       }
 
       .left-controls {
-        gap: 6px;
-        /* Tighter gap for mobile */
+        gap: 14px;
+        /* Increased gap for better touch targets */
       }
 
       .control-btn {
@@ -715,11 +715,11 @@
         background: #0a0a0a;
       }
 
-      /* Grid - Single Column */
+      /* Grid - 2 Column */
       .video-card {
-        flex: 1 1 100%;
-        aspect-ratio: 4/3;
-        /* Taller for mobile */
+        flex: 0 0 calc(50% - 8px);
+        aspect-ratio: 3/4;
+        /* Taller for mobile to fit faces */
       }
     }
   </style>
