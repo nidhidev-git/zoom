@@ -14,12 +14,24 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const app = express();
-const options = {
-    key: fs.readFileSync(config.sslKey),
-    cert: fs.readFileSync(config.sslCrt),
-};
+let httpsServer;
 
-const httpsServer = https.createServer(options, app);
+// Check if we are checking for certs or just falling back to http (Render handles SSL termination)
+// Or simply check if file exists
+if (fs.existsSync(config.sslKey) && fs.existsSync(config.sslCrt)) {
+    const options = {
+        key: fs.readFileSync(config.sslKey),
+        cert: fs.readFileSync(config.sslCrt),
+    };
+    httpsServer = https.createServer(options, app);
+    console.log('Using HTTPS with local certificates.');
+} else {
+    // Fallback to HTTP (Production / Render)
+    const http = require('http');
+    httpsServer = http.createServer(app);
+    console.log('SSL certificates not found. Using HTTP (likely behind reverse proxy/Render).');
+}
+
 const io = socketIo(httpsServer);
 
 app.use(express.static('public'));
